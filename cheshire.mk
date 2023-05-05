@@ -55,7 +55,7 @@ chs-clean-deps:
 ######################
 
 CHS_NONFREE_REMOTE ?= git@iis-git.ee.ethz.ch:pulp-restricted/cheshire-nonfree.git
-CHS_NONFREE_COMMIT ?= 86fa0ba
+CHS_NONFREE_COMMIT ?= e702b4ce754c3b7c9a864a2ce8e2d2fa013056ea
 
 chs-nonfree-init:
 	git clone $(CHS_NONFREE_REMOTE) $(CHS_ROOT)/nonfree
@@ -154,10 +154,7 @@ chs-sim-all: $(CHS_ROOT)/target/sim/models/24FC1025.v
 chs-sim-all: $(CHS_ROOT)/target/sim/vsim/compile.cheshire_soc.tcl
 
 #############
-# FPGA Flow #
+# Emulation #
 #############
 
-$(CHS_ROOT)/target/xilinx/scripts/add_sources.tcl: Bender.yml
-	$(BENDER) script vivado -t fpga -t cv64a6_imafdcsclic_sv39 -t cva6 > $@
-
-chs-xilinx-all: $(CHS_ROOT)/target/xilinx/scripts/add_sources.tcl
+include $(CHS_ROOT)/target/xilinx/xilinx.mk
