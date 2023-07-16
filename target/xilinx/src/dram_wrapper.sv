@@ -32,8 +32,8 @@ module dram_wrapper #(
     `DDR3_INTF
 `endif
     // Dram axi interface
-    input  axi_soc_req_t  soc_req_i,
-    output axi_soc_resp_t soc_rsp_o
+    (* mark_debug = "true" *) input  axi_soc_req_t  soc_req_i,
+    (* mark_debug = "true" *) output axi_soc_resp_t soc_rsp_o
 );
 
   ////////////////////////////////////
@@ -51,22 +51,35 @@ module dram_wrapper #(
     integer StrobeWidth;
   } dram_cfg_t;
 
-`ifdef USE_DDR4
+`ifdef TARGET_VCU128
   localparam dram_cfg_t cfg = '{
     EnSpill0      : 1,
     EnResizer     : 1,
     EnCDC         : 1, // 333 MHz axi
     EnSpill1      : 1,
-    IdWidth       : 4,
+    IdWidth       : 6,
     AddrWidth     : 32,
     DataWidth     : 512,
     StrobeWidth   : 64
   };
 `endif
 
-`ifdef USE_DDR3
+`ifdef TARGET_ZCU102
   localparam dram_cfg_t cfg = '{
-    EnSpill0      : 0,
+    EnSpill0      : 1,
+    EnResizer     : 1,
+    EnCDC         : 1, // ??? MHz axi
+    EnSpill1      : 1,
+    IdWidth       : 6,
+    AddrWidth     : 29,
+    DataWidth     : 128,
+    StrobeWidth   : 16
+  };
+`endif
+
+`ifdef TARGET_GENESYS2
+  localparam dram_cfg_t cfg = '{
+    EnSpill0      : 1,
     EnResizer     : 0,
     EnCDC         : 1, // 200 MHz axi
     EnSpill1      : 1,
@@ -90,8 +103,10 @@ module dram_wrapper #(
   axi_soc_resp_t soc_spill_rsp, spill_resizer_rsp;
 
   // Signals after resizing
-  axi_ddr_req_t resizer_cdc_req, cdc_spill_req, spill_dram_req;
-  axi_ddr_resp_t resizer_cdc_rsp, cdc_spill_rsp, spill_dram_rsp;
+  axi_ddr_req_t resizer_cdc_req, cdc_spill_req;
+  axi_ddr_req_t spill_dram_req;
+  axi_ddr_resp_t resizer_cdc_rsp, cdc_spill_rsp;
+  axi_ddr_resp_t spill_dram_rsp;
 
   // Entry signals
   assign soc_spill_req = soc_req_i;
@@ -255,8 +270,8 @@ module dram_wrapper #(
 
   end else begin : gen_upsize_ids
     // Forward arid awid rid bid to and from DDR
-    assign spill_dram_req_arid = spill_dram_req.ar.id;
-    assign spill_dram_req_awid = spill_dram_req.aw.id;
+    assign spill_dram_req_arid = {{-IdPadding{1'b0}}, spill_dram_req.ar.id};
+    assign spill_dram_req_awid = {{-IdPadding{1'b0}}, spill_dram_req.aw.id};
     assign spill_dram_rsp.r.id = spill_dram_rsp_rid;
     assign spill_dram_rsp.b.id = spill_dram_rsp_bid;
   end

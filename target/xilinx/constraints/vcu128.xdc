@@ -2,9 +2,27 @@
 # BOARD SPECIFIC CONSTRAINTS #
 ##############################
 
-# JTAG are on non clock capable GPIOs (if not using BSCANE)
-set_property CLOCK_DEDICATED_ROUTE FALSE [get_nets -of [get_ports jtag_tck_i]]
-set_property CLOCK_BUFFER_TYPE NONE [get_nets -of [get_ports jtag_tck_i]]
+#############
+# Sys clock #
+#############
+
+create_clock -period 10 -name sys_clk [get_pins u_ibufg_sys_clk/O]
+set_property CLOCK_DEDICATED_ROUTE BACKBONE [get_pins u_ibufg_sys_clk/O]
+set_clock_groups -name sys_clk_async -asynchronous -group {sys_clk}
+
+#############
+# Mig clock #
+#############
+
+set MIG_RST [get_pins i_dram_wrapper/i_dram/c0_ddr4_ui_clk_sync_rst]
+#create_clock -period 10 -name dram_axi_clk [get_pins i_dram_wrapper/i_dram/c0_ddr4_ui_clk]
+set_false_path -hold -through $MIG_RST
+set_max_delay -through $MIG_RST 10
+
+set_max_delay -datapath -from [get_pins i_dram_wrapper/i_axi_cdc_mig/i_axi_cdc_*/i_cdc_fifo_gray_*/*reg*/C] -to [get_pins i_dram_wrapper/i_axi_cdc_mig/i_axi_cdc_*/i_cdc_fifo_gray_dst_*/*i_sync/reg*/D] $FPGA_TCK
+set_max_delay -datapath -from [get_pins i_dram_wrapper/i_axi_cdc_mig/i_axi_cdc_*/i_cdc_fifo_gray_*/*reg*/C] -to [get_pins i_dram_wrapper/i_axi_cdc_mig/i_axi_cdc_*/i_cdc_fifo_gray_*/i_spill_register/spill_register_flushable_i/*reg*/D] $FPGA_TCK
+
+
 
 #################################################################################
 

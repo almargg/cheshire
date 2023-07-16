@@ -4,16 +4,26 @@
 #
 # Cyril Koenig <cykoenig@iis.ee.ethz.ch>
 
-#source ips/xlnx_mig_7_ddr3_ex/questa/compile.do
-#source ips/xlnx_mig_7_ddr3/questa/compile.do
-source ips/xlnx_mig_ddr4_ex/questa/compile.do
-source ips/xlnx_mig_ddr4/questa/compile.do
 source ../scripts/add_sources_vsim.tcl
 
+if {[string first "xlnx_clk_wiz" $::env(IPS)] != -1} {
+    source ips/xlnx_clk_wiz/questa/compile.do
 
-vlog -work work -L xil_defaultlib -64 -incr -sv "./ips/xlnx_mig_ddr4_ex/questa/srcs/sim_tb_top.sv"
-#vlog -work work -L xil_defaultlib -64 -incr -sv "./ips/xlnx_mig_7_ddr3_ex/questa/srcs/sim_tb_top.v"
+if {[string first "xlnx_vio" $::env(IPS)] != -1} {
+    source ips/xlnx_vio/questa/compile.do
+}}
 
+if {[string first "xlnx_mig_7_ddr3" $::env(IPS)] != -1} {
+    source ips/xlnx_mig_7_ddr3_ex/questa/compile.do
+    source ips/xlnx_mig_7_ddr3/questa/compile.do
+    vlog -work work -L xil_defaultlib -64 -incr -sv "./ips/xlnx_mig_7_ddr3_ex/questa/srcs/sim_tb_top.v"
+}
+
+if {[string first "xlnx_mig_ddr4" $::env(IPS)] != -1} {
+    source ips/xlnx_mig_ddr4_ex/questa/compile.do
+    source ips/xlnx_mig_ddr4/questa/compile.do
+    vlog -work work -L xil_defaultlib -64 -incr -sv "./ips/xlnx_mig_ddr4_ex/questa/srcs/sim_tb_top.sv"
+}
 
 # Note : this testbench does not implenent the ddr4 memory model
 set TESTBENCH "work.sim_tb_top xil_defaultlib.glbl"

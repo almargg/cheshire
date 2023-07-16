@@ -1,3 +1,31 @@
+##############################
+# BOARD SPECIFIC CONSTRAINTS #
+##############################
+
+#############
+# Sys clock #
+#############
+
+create_clock -period 3.333 -name sys_clk [get_pins u_ibufg_sys_clk/O]
+set_property CLOCK_DEDICATED_ROUTE BACKBONE [get_pins u_ibufg_sys_clk/O]
+set_clock_groups -name sys_clk_async -asynchronous -group {sys_clk}
+
+#############
+# Mig clock #
+#############
+
+set MIG_RST [get_pins i_dram_wrapper/i_dram/c0_ddr4_ui_clk_sync_rst]
+create_clock -period 3.333 -name dram_axi_clk [get_pins i_dram_wrapper/i_dram/c0_ddr4_ui_clk]
+set_false_path -hold -through $MIG_RST
+set_max_delay -through $MIG_RST 3.333
+
+
+#################################################################################
+
+###############
+# ASSIGN PINS #
+###############
+
 #################################################
 ### ZCU102 Rev1.0 Master XDC file 09-15-2016 ####
 #################################################
@@ -155,8 +183,8 @@ set_property IOSTANDARD  LVCMOS33 [get_ports "uart_rx_i"] ;# Bank  49 VCCO - VCC
 #set_property IOSTANDARD  LVCMOS33 [get_ports "TRACEDATA4"] ;# Bank  48 VCCO - VCC3V3   - IO_L1N_AD15N_48
 #set_property PACKAGE_PIN H18      [get_ports "TRACEDATA3"] ;# Bank  48 VCCO - VCC3V3   - IO_L1P_AD15P_48
 #set_property IOSTANDARD  LVCMOS33 [get_ports "TRACEDATA3"] ;# Bank  48 VCCO - VCC3V3   - IO_L1P_AD15P_48
-set_property PACKAGE_PIN A20      [get_ports "jtag_tck_i"] ;# Bank  47 VCCO - VCC3V3   - IO_L12N_AD0N_47
-set_property IOSTANDARD  LVCMOS33 [get_ports "jtag_tck_i"] ;# Bank  47 VCCO - VCC3V3   - IO_L12N_AD0N_47
+set_property PACKAGE_PIN A20      [get_ports "jtag_tms_i"] ;# Bank  47 VCCO - VCC3V3   - IO_L12N_AD0N_47
+set_property IOSTANDARD  LVCMOS33 [get_ports "jtag_tms_i"] ;# Bank  47 VCCO - VCC3V3   - IO_L12N_AD0N_47
 set_property PACKAGE_PIN B20      [get_ports "jtag_tdi_i"] ;# Bank  47 VCCO - VCC3V3   - IO_L12P_AD0P_47
 set_property IOSTANDARD  LVCMOS33 [get_ports "jtag_tdi_i"] ;# Bank  47 VCCO - VCC3V3   - IO_L12P_AD0P_47
 set_property PACKAGE_PIN A22      [get_ports "jtag_tdo_o"] ;# Bank  47 VCCO - VCC3V3   - IO_L11N_AD1N_47
@@ -183,10 +211,10 @@ set_property IOSTANDARD  LVCMOS33 [get_ports "jtag_tck_i"] ;# Bank  47 VCCO - VC
 #set_property IOSTANDARD  LVCMOS33 [get_ports "PMOD1_4"] ;# Bank  47 VCCO - VCC3V3   - IO_L6N_HDGC_AD6N_47
 #set_property PACKAGE_PIN G20      [get_ports "PMOD1_5"] ;# Bank  47 VCCO - VCC3V3   - IO_L6P_HDGC_AD6P_47
 #set_property IOSTANDARD  LVCMOS33 [get_ports "PMOD1_5"] ;# Bank  47 VCCO - VCC3V3   - IO_L6P_HDGC_AD6P_47
-#set_property PACKAGE_PIN F21      [get_ports "CLK_125_N"] ;# Bank  47 VCCO - VCC3V3   - IO_L5N_HDGC_AD7N_47
-#set_property IOSTANDARD  LVDS_25  [get_ports "CLK_125_N"] ;# Bank  47 VCCO - VCC3V3   - IO_L5N_HDGC_AD7N_47
-#set_property PACKAGE_PIN G21      [get_ports "CLK_125_P"] ;# Bank  47 VCCO - VCC3V3   - IO_L5P_HDGC_AD7P_47
-#set_property IOSTANDARD  LVDS_25  [get_ports "CLK_125_P"] ;# Bank  47 VCCO - VCC3V3   - IO_L5P_HDGC_AD7P_47
+#set_property PACKAGE_PIN F21      [get_ports "sys_clk_n"] ;# Bank  47 VCCO - VCC3V3   - IO_L5N_HDGC_AD7N_47 -> CLK_125_N
+#set_property IOSTANDARD  LVDS_25  [get_ports "sys_clk_n"] ;# Bank  47 VCCO - VCC3V3   - IO_L5N_HDGC_AD7N_47 -> CLK_125_N
+#set_property PACKAGE_PIN G21      [get_ports "sys_clk_p"] ;# Bank  47 VCCO - VCC3V3   - IO_L5P_HDGC_AD7P_47 -> CLK_125_P
+#set_property IOSTANDARD  LVDS_25  [get_ports "sys_clk_p"] ;# Bank  47 VCCO - VCC3V3   - IO_L5P_HDGC_AD7P_47 -> CLK_125_P
 #set_property PACKAGE_PIN J20      [get_ports "PMOD1_6"] ;# Bank  47 VCCO - VCC3V3   - IO_L4N_AD8N_47
 #set_property IOSTANDARD  LVCMOS33 [get_ports "PMOD1_6"] ;# Bank  47 VCCO - VCC3V3   - IO_L4N_AD8N_47
 #set_property PACKAGE_PIN J19      [get_ports "PMOD1_7"] ;# Bank  47 VCCO - VCC3V3   - IO_L4P_AD8P_47
@@ -618,11 +646,11 @@ set_property IOSTANDARD  LVCMOS33 [get_ports "cpu_reset"] ;# Bank  44 VCCO - VCC
 #set_property IOSTANDARD  SSTL12_DCI [get_ports "DDR4_A15_CAS_B"] ;# Bank  64 VCCO - VCC1V2   - IO_L13N_T2L_N1_GC_QBC_64
 #set_property PACKAGE_PIN AL6      [get_ports "DDR4_DM0"] ;# Bank  64 VCCO - VCC1V2   - IO_L13P_T2L_N0_GC_QBC_64
 #set_property IOSTANDARD  POD12_DCI [get_ports "DDR4_DM0"] ;# Bank  64 VCCO - VCC1V2   - IO_L13P_T2L_N0_GC_QBC_64
-#set_property PACKAGE_PIN AL7      [get_ports "USER_SI570_N"] ;# Bank  64 VCCO - VCC1V2   - IO_L12N_T1U_N11_GC_64
-#set_property IOSTANDARD  DIFF_SSTL12 [get_ports "USER_SI570_N"] ;# Bank  64 VCCO - VCC1V2   - IO_L12N_T1U_N11_GC_64
-#set_property PACKAGE_PIN AL8      [get_ports "USER_SI570_P"] ;# Bank  64 VCCO - VCC1V2   - IO_L12P_T1U_N10_GC_64
-#set_property IOSTANDARD  DIFF_SSTL12 [get_ports "USER_SI570_P"] ;# Bank  64 VCCO - VCC1V2   - IO_L12P_T1U_N10_GC_64
-#set_property PACKAGE_PIN AK7      [get_ports "DDR4_BG0"] ;# Bank  64 VCCO - VCC1V2   - IO_L11N_T1U_N9_GC_64
+set_property PACKAGE_PIN AL7      [get_ports "sys_clk_n"] ;# Bank  64 VCCO - VCC1V2   - IO_L12N_T1U_N11_GC_64 => USER_SI570_N
+set_property IOSTANDARD  DIFF_SSTL12 [get_ports "sys_clk_n"] ;# Bank  64 VCCO - VCC1V2   - IO_L12N_T1U_N11_GC_64  => USER_SI570_N
+set_property PACKAGE_PIN AL8      [get_ports "sys_clk_p"] ;# Bank  64 VCCO - VCC1V2   - IO_L12P_T1U_N10_GC_64  => USER_SI570_P
+set_property IOSTANDARD  DIFF_SSTL12 [get_ports "sys_clk_p"] ;# Bank  64 VCCO - VCC1V2   - IO_L12P_T1U_N10_GC_64  => USER_SI570_P
+#set_property PACKAGE_PIN AK7      [get_ports "DDR4_BG0"] ;# Bank  64 VCCO - VCC1V2   - IO_L11N_T1U_N9_GC_64 
 #set_property IOSTANDARD  SSTL12_DCI [get_ports "DDR4_BG0"] ;# Bank  64 VCCO - VCC1V2   - IO_L11N_T1U_N9_GC_64
 #set_property PACKAGE_PIN AK8      [get_ports "DDR4_ACT_B"] ;# Bank  64 VCCO - VCC1V2   - IO_L11P_T1U_N8_GC_64
 #set_property IOSTANDARD  SSTL12_DCI [get_ports "DDR4_ACT_B"] ;# Bank  64 VCCO - VCC1V2   - IO_L11P_T1U_N8_GC_64

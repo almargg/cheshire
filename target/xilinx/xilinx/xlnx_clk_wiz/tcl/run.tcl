@@ -40,8 +40,10 @@ if {$::env(BOARD) eq "vcu128"} {
                               CONFIG.CLKOUT4_PHASE_ERROR {87.180} \
                         ] [get_ips $ipName]
 }
+
 if {$::env(BOARD) eq "zcu102"} {
-    set_property -dict  [list CONFIG.CLK_IN1_BOARD_INTERFACE {Custom} \
+    set_property -dict  [list CONFIG.PRIM_SOURCE {No_buffer} \
+                              CONFIG.PRIM_IN_FREQ {300.000} \
                               CONFIG.CLKOUT2_USED {true} \
                               CONFIG.CLKOUT3_USED {true} \
                               CONFIG.CLKOUT4_USED {true} \
@@ -52,7 +54,6 @@ if {$::env(BOARD) eq "zcu102"} {
                               CONFIG.CLKOUT2_REQUESTED_OUT_FREQ {50.000} \
                               CONFIG.CLKOUT3_REQUESTED_OUT_FREQ {20.000} \
                               CONFIG.CLKOUT4_REQUESTED_OUT_FREQ {10.000} \
-                              CONFIG.PRIM_SOURCE {No_buffer} \
                               CONFIG.CLKIN1_JITTER_PS {33.330000000000005} \
                               CONFIG.MMCM_CLKFBOUT_MULT_F {4.000} \
                               CONFIG.MMCM_CLKIN1_PERIOD {3.333} \
@@ -71,8 +72,10 @@ if {$::env(BOARD) eq "zcu102"} {
                               CONFIG.CLKOUT4_PHASE_ERROR {77.836} \
                         ] [get_ips $ipName]
 }
+
 if {$::env(BOARD) eq "genesys2"} {
-    set_property -dict  [list CONFIG.CLK_IN1_BOARD_INTERFACE {Custom} \
+    set_property -dict  [list CONFIG.PRIM_SOURCE {No_buffer} \
+                              CONFIG.PRIM_IN_FREQ {200.000} \
                               CONFIG.CLKOUT2_USED {true} \
                               CONFIG.CLKOUT3_USED {true} \
                               CONFIG.CLKOUT4_USED {true} \
@@ -80,10 +83,9 @@ if {$::env(BOARD) eq "genesys2"} {
                               CONFIG.CLK_OUT2_PORT {clk_50} \
                               CONFIG.CLK_OUT3_PORT {clk_20} \
                               CONFIG.CLK_OUT4_PORT {clk_10} \
-                              CONFIG.CLKOUT2_REQUESTED_OUT_FREQ {50} \
-                              CONFIG.CLKOUT3_REQUESTED_OUT_FREQ {20} \
-                              CONFIG.CLKOUT4_REQUESTED_OUT_FREQ {10} \
-                              CONFIG.PRIM_SOURCE {No_buffer} \
+                              CONFIG.CLKOUT2_REQUESTED_OUT_FREQ {50.000} \
+                              CONFIG.CLKOUT3_REQUESTED_OUT_FREQ {20.000} \
+                              CONFIG.CLKOUT4_REQUESTED_OUT_FREQ {10.000} \
                               CONFIG.CLKIN1_JITTER_PS {50.0} \
                               CONFIG.MMCM_CLKFBOUT_MULT_F {5.000} \
                               CONFIG.MMCM_CLKIN1_PERIOD {5.000} \

@@ -55,7 +55,7 @@ chs-clean-deps:
 ######################
 
 CHS_NONFREE_REMOTE ?= git@iis-git.ee.ethz.ch:pulp-restricted/cheshire-nonfree.git
-CHS_NONFREE_COMMIT ?= e702b4ce754c3b7c9a864a2ce8e2d2fa013056ea
+CHS_NONFREE_COMMIT ?= b11f9e5fbc97209da75e77c93a1e4e0460dddf6c
 
 chs-nonfree-init:
 	git clone $(CHS_NONFREE_REMOTE) $(CHS_ROOT)/nonfree
@@ -158,3 +158,4 @@ chs-sim-all: $(CHS_ROOT)/target/sim/vsim/compile.cheshire_soc.tcl
 #############
 
 include $(CHS_ROOT)/target/xilinx/xilinx.mk
+include $(CHS_XIL_DIR)/sim/simulate.mk

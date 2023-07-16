@@ -5,6 +5,29 @@
 # Testmode is set to 0 during normal use
 set_case_analysis 0 [get_ports testmode_i]
 
+
+set all_in_mux [get_nets -of [ get_pins -filter { DIRECTION == IN } -of [get_cells -hier -filter { ORIG_REF_NAME == tc_clk_mux2 || REF_NAME == tc_clk_mux2 }]]]
+set_property CLOCK_DEDICATED_ROUTE FALSE $all_in_mux
+set_property CLOCK_BUFFER_TYPE NONE $all_in_mux
+
+#############
+# Sys clock #
+#############
+
+create_clock -period 5 -name sys_clk [get_pins u_ibufg_sys_clk/O]
+set_property CLOCK_DEDICATED_ROUTE BACKBONE [get_pins u_ibufg_sys_clk/O]
+set_clock_groups -name sys_clk_async -asynchronous -group {sys_clk}
+
+
+#############
+# Mig clock #
+#############
+
+set MIG_RST [get_pins i_dram_wrapper/i_dram/c0_ddr4_ui_clk_sync_rst]
+create_clock -period 5 -name dram_axi_clk [get_pins i_dram_wrapper/i_dram/c0_ddr4_ui_clk]
+set_false_path -hold -through $MIG_RST
+set_max_delay -through $MIG_RST 5 
+
 #######
 # VGA #
 #######
@@ -54,8 +77,8 @@ set_false_path -hold -to [get_ports {i2c_scl_io i2c_sda_io}]
 ###############
 
 ## Clock Signal
-# set_property -dict { PACKAGE_PIN AD11  IOSTANDARD LVDS     } [get_ports { sysclk_n }]; #IO_L12N_T1_MRCC_33 Sch=sysclk_n
-# set_property -dict { PACKAGE_PIN AD12  IOSTANDARD LVDS     } [get_ports { sysclk_p }]; #IO_L12P_T1_MRCC_33 Sch=sysclk_p
+set_property -dict { PACKAGE_PIN AD11  IOSTANDARD LVDS     } [get_ports { sys_clk_n }]; #IO_L12N_T1_MRCC_33 Sch=sysclk_n
+set_property -dict { PACKAGE_PIN AD12  IOSTANDARD LVDS     } [get_ports { sys_clk_p }]; #IO_L12P_T1_MRCC_33 Sch=sysclk_p
 
 ## Buttons
 #set_property -dict { PACKAGE_PIN E18   IOSTANDARD LVCMOS12 } [get_ports { btnc }]; #IO_25_17 Sch=btnc

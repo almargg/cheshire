@@ -203,6 +203,28 @@ module cheshire_top_xilinx
   (* dont_touch = "yes" *) wire soc_clk;
   (* dont_touch = "yes" *) wire rst_n;
 
+  ///////////////////
+  // GPIOs         // 
+  ///////////////////
+
+  // Tie off signals if no switches on the board
+`ifndef USE_SWITCHES
+  logic         testmode_i;
+  logic [1:0]   boot_mode_i;
+  assign testmode_i  = '0;
+  assign boot_mode_i = 2'b00;
+`endif
+
+  // Give VDD and GND to JTAG dongle
+`ifdef USE_JTAG_VDDGND
+  assign jtag_vdd_o  = '1;
+  assign jtag_gnd_o  = '0;
+`endif
+`ifndef USE_JTAG_TRSTN
+  logic jtag_trst_ni;
+  assign jtag_trst_ni = '1;
+`endif
+
   //////////////////
   // Clock Wizard //
   //////////////////
@@ -239,7 +261,7 @@ module cheshire_top_xilinx
   rstgen i_rstgen_main (
     .clk_i        ( soc_clk                  ),
     .rst_ni       ( ~sys_rst                 ),
-    .test_mode_i  ( test_mode_i              ),
+    .test_mode_i  ( testmode_i              ),
     .rst_no       ( rst_n                    ),
     .init_no      (                          ) // keep open
   );
@@ -249,38 +271,23 @@ module cheshire_top_xilinx
   ///////////////////
 
   logic       vio_reset, vio_boot_mode_sel;
-  logic [1:0] vio_boot_mode;
+  logic [1:0] boot_mode, vio_boot_mode;
 
+`ifdef USE_VIO
   xlnx_vio i_xlnx_vio (
     .clk(soc_clk),
     .probe_out0(vio_reset),
     .probe_out1(vio_boot_mode),
     .probe_out2(vio_boot_mode_sel)
   );
+`else
+  assign vio_reset = '0;
+  assign vio_boot_mode = '0;
+  assign vio_boot_mode_sel = '0;
+`endif
+
   assign sys_rst = ~cpu_resetn | vio_reset;
   assign boot_mode = vio_boot_mode_sel ? vio_boot_mode : boot_mode_i;
-
-  ///////////////////
-  // GPIOs         // 
-  ///////////////////
-
-  // Tie off signals if no switches on the board
-`ifndef USE_SWITCHES
-  logic         testmode_i;
-  logic [1:0]   boot_mode_i;
-  assign testmode_i  = '0;
-  assign boot_mode_i = 2'b00;
-`endif
-
-  // Give VDD and GND to JTAG dongle
-`ifdef USE_JTAG_VDDGND
-  assign jtag_vdd_o  = '1;
-  assign jtag_gnd_o  = '0;
-`endif
-`ifndef USE_JTAG_TRSTN
-  logic jtag_trst_ni;
-  assign jtag_trst_ni = '1;
-`endif
 
   //////////////
   // DRAM MIG //
@@ -289,12 +296,12 @@ module cheshire_top_xilinx
 `ifdef USE_DDR
   dram_wrapper #(
     .axi_soc_aw_chan_t ( axi_llc_aw_chan_t ),
-    .axi_soc_w_chan_t  ( axi_llc_w_chan_t ),
-    .axi_soc_b_chan_t  ( axi_llc_b_chan_t ),
+    .axi_soc_w_chan_t  ( axi_llc_w_chan_t  ),
+    .axi_soc_b_chan_t  ( axi_llc_b_chan_t  ),
     .axi_soc_ar_chan_t ( axi_llc_ar_chan_t ),
-    .axi_soc_r_chan_t  ( axi_llc_r_chan_t ),
-    .axi_soc_req_t     (axi_llc_req_t),
-    .axi_soc_resp_t    (axi_llc_rsp_t)
+    .axi_soc_r_chan_t  ( axi_llc_r_chan_t  ),
+    .axi_soc_req_t     ( axi_llc_req_t     ),
+    .axi_soc_resp_t    ( axi_llc_rsp_t     )
   ) i_dram_wrapper (
     // Rst
     .sys_rst_i                  ( sys_rst   ),
@@ -400,7 +407,7 @@ module cheshire_top_xilinx
   logic [3:0]           qspi_dqo_ts;
   logic [3:0]           qspi_dqo;
   logic [SpihNumCs-1:0] qspi_cs_b;
-logic [SpihNumCs-1:0] qspi_cs_b_ts;
+  logic [SpihNumCs-1:0] qspi_cs_b_ts;
 
   assign qspi_clk      = spi_sck_soc;
   assign qspi_cs_b     = spi_cs_soc;
@@ -472,7 +479,6 @@ logic [SpihNumCs-1:0] qspi_cs_b_ts;
     end
   end
 
-
   /////////////////
   // Fan Control //
   /////////////////
@@ -502,7 +508,6 @@ logic [SpihNumCs-1:0] qspi_cs_b_ts;
     .req_i ( ext_req  ),
     .rsp_o ( ext_rsp  )
   );
-
 
   //////////////////
   // Cheshire SoC //

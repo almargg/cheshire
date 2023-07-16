@@ -10,7 +10,7 @@ CHS_XIL_DIR  ?= $(CHS_ROOT)/target/xilinx
 VIVADO       ?= vitis-2020.2 vivado
 
 PROJECT      ?= cheshire
-BOARD        ?= genesys2
+BOARD        ?= vcu128
 ip-dir       := $(CHS_XIL_DIR)/xilinx
 
 # Select board specific variables
@@ -54,7 +54,8 @@ VIVADOENV ?=  PROJECT=$(PROJECT)            \
               PORT=$(XILINX_PORT)           \
               HOST=$(XILINX_HOST)           \
               FPGA_PATH=$(FPGA_PATH)        \
-              BIT=$(bit)
+              BIT=$(bit)                    \
+              IP_PATHS="$(foreach ip-name,$(ips-names),xilinx/$(ip-name)/$(ip-name).srcs/sources_1/ip/$(ip-name)/$(ip-name).xci)"
 
 MODE        ?= gui
 VIVADOFLAGS ?= -nojournal -mode $(MODE)
@@ -69,7 +70,8 @@ $(mcs): $(bit)
 $(bit): $(ips) $(CHS_XIL_DIR)/scripts/add_sources.tcl
 	@mkdir -p $(out)
 	cd $(CHS_XIL_DIR) && $(VIVADOENV) $(VIVADO) $(VIVADOFLAGS) -source scripts/prologue.tcl -source scripts/run.tcl
-	cp $(CHS_XIL_DIR)/$(PROJECT).runs/impl_1/$(PROJECT)* $(out)
+	cp $(CHS_XIL_DIR)/$(PROJECT).runs/impl_1/*.bit $(out)
+	cp $(CHS_XIL_DIR)/$(PROJECT).runs/impl_1/*.ltx $(out)
 
 # Generate ips
 %.xci:
@@ -95,6 +97,9 @@ chs-xil-rebuild-top:
 	${MAKE} chs-xil-clean
 	find $(CHS_XIL_DIR)/xilinx -wholename "**/*.srcs/**/*.xci" | xargs -n 1 -I {} cp {} $(CHS_XIL_DIR)
 	${MAKE} $(bit)
+
+chs-xil-flash: $(CHS_SW_DIR)/boot/linux.gpt.bin
+	$(VIVADOENV) $(VIVADO) $(VIVADOFLAGS) FILE=$(CHS_SW_DIR)/boot/linux.gpt.bin OFFSET=0 -source $(CHS_XIL_DIR)/scripts/program.tcl
 
 # Bender script
 $(CHS_XIL_DIR)/scripts/add_sources.tcl: Bender.yml

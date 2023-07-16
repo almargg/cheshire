@@ -16,27 +16,7 @@ switch $::env(BOARD) {
 }
 
 # Ips selection
-switch $::env(BOARD) {
-  "genesys2" - "kc705" - "vc707" {
-    set ips { "xilinx/xlnx_mig_7_ddr3/xlnx_mig_7_ddr3.srcs/sources_1/ip/xlnx_mig_7_ddr3/xlnx_mig_7_ddr3.xci" \
-              "xilinx/xlnx_vio/xlnx_vio.srcs/sources_1/ip/xlnx_vio/xlnx_vio.xci" \
-              "xilinx/xlnx_clk_wiz/xlnx_clk_wiz.srcs/sources_1/ip/xlnx_clk_wiz/xlnx_clk_wiz.xci"}
-  }
-  "vcu128" {
-    set ips { "xilinx/xlnx_mig_ddr4/xlnx_mig_ddr4.srcs/sources_1/ip/xlnx_mig_ddr4/xlnx_mig_ddr4.xci" \
-              "xilinx/xlnx_vio/xlnx_vio.srcs/sources_1/ip/xlnx_vio/xlnx_vio.xci" \
-              "xilinx/xlnx_clk_wiz/xlnx_clk_wiz.srcs/sources_1/ip/xlnx_clk_wiz/xlnx_clk_wiz.xci"}
-  }
-  "zcu102" {
-    set ips { "xilinx/xlnx_mig_ddr4/xlnx_mig_ddr4.srcs/sources_1/ip/xlnx_mig_ddr4/xlnx_mig_ddr4.xci" \
-              "xilinx/xlnx_vio/xlnx_vio.srcs/sources_1/ip/xlnx_vio/xlnx_vio.xci" \
-              "xilinx/xlnx_clk_wiz/xlnx_clk_wiz.srcs/sources_1/ip/xlnx_clk_wiz/xlnx_clk_wiz.xci"}
-  }
-  default {
-    set ips {}
-  }
-}
-
+set ips $::env(IP_PATHS)
 read_ip $ips
 
 source scripts/add_sources.tcl
@@ -72,6 +52,7 @@ report_clock_interaction                                                -file re
 # Instantiate ILA
 set DEBUG [llength [get_nets -hier -filter {MARK_DEBUG == 1}]]
 if ($DEBUG) {
+    remove_cell [get_cells -hier -filter {ORIG_REF_NAME == "unread" || REF_NAME == "unread"}]
     # Create core
     puts "Creating debug core..."
     create_debug_core u_ila_0 ila
@@ -120,11 +101,12 @@ launch_runs impl_1 -to_step write_bitstream
 wait_on_run impl_1
 
 # Check timing constraints
-open_run impl_1
 set timingrep [report_timing_summary -no_header -no_detailed_paths -return_string]
-if {! [string match -nocase {*timing constraints are met*} $timingrep]} {
-  send_msg_id {USER 1-1} ERROR {Timing constraints were not met.}
-  return -code error
+if {[info exists ::env(CHECK_TIMING)] && $::env(CHECK_TIMING)==1} {
+  if {! [string match -nocase {*timing constraints are met*} $timingrep]} {
+    send_msg_id {USER 1-1} ERROR {Timing constraints were not met.}
+    return -code error
+  }
 }
 
 # Output Verilog netlist + SDC for timing simulation

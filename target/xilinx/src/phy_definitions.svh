@@ -8,12 +8,10 @@
   `define USE_RESET
   `define USE_JTAG
   `define USE_JTAG_VDDGND
-  `define USE_VIO
   `define USE_DDR4
   `define USE_QSPI
   `define USE_STARTUPE3
-  // DRAM runs at 200MHz
-  `define DDR_CLK_DIVIDER 4'h4
+  `define USE_VIO
 `endif
 
 `ifdef TARGET_GENESYS2
@@ -23,17 +21,17 @@
   `define USE_SD
   `define USE_SWITCHES
   `define USE_DDR3
-  // DRAM runs at 200MHz
-  `define DDR_CLK_DIVIDER 4'h4
   `define USE_FAN
+  `define USE_VIO
 `endif
 
 `ifdef TARGET_ZCU102
   `define USE_RESET
   `define USE_JTAG
   `define USE_DDR4
-  // DRAM runs at 100MHz
-  `define DDR_CLK_DIVIDER 4'h2
+  `define USE_QSPI
+  `define USE_STARTUPE3
+  `define USE_VIO
 `endif
 
 /////////////////////
@@ -74,8 +72,8 @@
 `endif
 
 `define DDR3_INTF \
-  output ddr3_ck_p,
-  output ddr3_ck_n,
+  output ddr3_ck_p, \
+  output ddr3_ck_n, \
   inout [31:0] ddr3_dq, \
   inout [3:0] ddr3_dqs_n, \
   inout [3:0] ddr3_dqs_p, \
