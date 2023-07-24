@@ -6,16 +6,16 @@
 // Christopher Reinwardt <creinwar@student.ethz.ch>
 // Paul Scheffler <paulsc@iis.ee.ethz.ch>
 
-// Collects all existing verification IP (VIP) in one module for use in testbenches of
-// Cheshire-based SoCs and Chips. IOs are of inout direction where applicable.
+// collects all existing verification ip (vip) in one module for use in testbenches of
+// cheshire-based socs and chips. ios are of inout direction where applicable.
 
 module vip_cheshire_soc import cheshire_pkg::*; #(
   // DUT (must be set)
   parameter cheshire_cfg_t DutCfg           = '0,
   parameter type          axi_ext_llc_req_t = logic,
   parameter type          axi_ext_llc_rsp_t = logic,
-  parameter type          axi_ext_mst_req_t = logic,
-  parameter type          axi_ext_mst_rsp_t = logic,
+  parameter type          axi_mst_ext_req_t     = logic,
+  parameter type          axi_mst_ext_rsp_t     = logic,
   // Timing
   parameter time          ClkPeriodSys      = 5ns,
   parameter time          ClkPeriodJtag     = 20ns,
@@ -28,6 +28,8 @@ module vip_cheshire_soc import cheshire_pkg::*; #(
   parameter int unsigned  UartParityEna     = 0,
   parameter int unsigned  UartBurstBytes    = 256,
   parameter int unsigned  UartWaitCycles    = 60,
+  // External AXI ports
+  parameter int unsigned  NumAxiExtMstPorts = 1,
   // Serial Link
   parameter int unsigned  SlinkMaxWaitAx    = 100,
   parameter int unsigned  SlinkMaxWaitR     = 5,
@@ -36,7 +38,8 @@ module vip_cheshire_soc import cheshire_pkg::*; #(
   parameter bit           SlinkAxiDebug     = 0,
   // Derived Parameters;  *do not override*
   parameter int unsigned  AxiStrbWidth      = DutCfg.AxiDataWidth/8,
-  parameter int unsigned  AxiStrbBits       = $clog2(DutCfg.AxiDataWidth/8)
+  parameter int unsigned  AxiStrbBits       = $clog2(DutCfg.AxiDataWidth/8),
+  parameter int unsigned  SelectWidth       = $clog2(1+NumAxiExtMstPorts)
 ) (
   output logic       clk,
   output logic       rst_n,
@@ -47,8 +50,9 @@ module vip_cheshire_soc import cheshire_pkg::*; #(
   input  axi_ext_llc_req_t axi_llc_mst_req,
   output axi_ext_llc_rsp_t axi_llc_mst_rsp,
   // External virtual AXI ports
-  input axi_ext_mst_req_t axi_ext_mst_req,
-  output axi_ext_mst_rsp_t axi_ext_mst_rsp,
+  output axi_mst_ext_req_t [NumAxiExtMstPorts-1:0] axi_msts_req,
+  input  axi_mst_ext_rsp_t [NumAxiExtMstPorts-1:0] axi_msts_rsp,
+  input logic [SelectWidth-1:0] axi_mst_select_i,
   // JTAG interface
   output logic jtag_tck,
   output logic jtag_trst_n,
@@ -552,7 +556,7 @@ module vip_cheshire_soc import cheshire_pkg::*; #(
   axi_mst_req_t slink_axi_mst_req, slink_axi_slv_req;
   axi_mst_rsp_t slink_axi_mst_rsp, slink_axi_slv_rsp;
 
-  // AXI driver port
+  // AXI driver port (1)
   AXI_BUS_DV #(
     .AXI_ADDR_WIDTH ( DutCfg.AddrWidth     ),
     .AXI_DATA_WIDTH ( DutCfg.AxiDataWidth  ),
@@ -571,27 +575,23 @@ module vip_cheshire_soc import cheshire_pkg::*; #(
 
   `AXI_ASSIGN (axi_drv_mst, axi_drv_mst_dv)
 
+  // AXI demultiplexed ports (1+NumAxiExtMstPorts)
   AXI_BUS #(
     .AXI_ADDR_WIDTH ( DutCfg.AddrWidth     ),
     .AXI_DATA_WIDTH ( DutCfg.AxiDataWidth  ),
     .AXI_ID_WIDTH   ( DutCfg.AxiMstIdWidth ),
     .AXI_USER_WIDTH ( DutCfg.AxiUserWidth  )
-  ) axi_ext_mst ();
+  ) axi_demux_msts [(1+NumAxiExtMstPorts)-1:0]();
 
+  // AXI external ports (NumAxiExtMstPorts)
   AXI_BUS #(
     .AXI_ADDR_WIDTH ( DutCfg.AddrWidth     ),
     .AXI_DATA_WIDTH ( DutCfg.AxiDataWidth  ),
     .AXI_ID_WIDTH   ( DutCfg.AxiMstIdWidth ),
     .AXI_USER_WIDTH ( DutCfg.AxiUserWidth  )
-  ) axi_mux_slvs [1:0] ();
+  ) axi_ext_msts [NumAxiExtMstPorts-1:0]();
 
-  AXI_BUS #(
-    .AXI_ADDR_WIDTH ( DutCfg.AddrWidth     ),
-    .AXI_DATA_WIDTH ( DutCfg.AxiDataWidth  ),
-    .AXI_ID_WIDTH   ( DutCfg.AxiMstIdWidth+1 ),
-    .AXI_USER_WIDTH ( DutCfg.AxiUserWidth  )
-  ) axi_mux_mst();
-
+  // AXI to Serial Link master port (1)
   AXI_BUS #(
     .AXI_ADDR_WIDTH ( DutCfg.AddrWidth     ),
     .AXI_DATA_WIDTH ( DutCfg.AxiDataWidth  ),
@@ -599,6 +599,7 @@ module vip_cheshire_soc import cheshire_pkg::*; #(
     .AXI_USER_WIDTH ( DutCfg.AxiUserWidth  )
   ) slink_mst();
 
+  // Serial Link to AXI slave port (1, unused)
   AXI_BUS_DV #(
     .AXI_ADDR_WIDTH ( DutCfg.AddrWidth     ),
     .AXI_DATA_WIDTH ( DutCfg.AxiDataWidth  ),
@@ -608,49 +609,42 @@ module vip_cheshire_soc import cheshire_pkg::*; #(
     .clk_i  ( clk )
   );
 
-  `AXI_ASSIGN_FROM_REQ(axi_ext_mst, axi_ext_mst_req)
-  `AXI_ASSIGN_TO_RESP(axi_ext_mst_rsp, axi_ext_mst)
-
   `AXI_ASSIGN_TO_REQ(slink_axi_mst_req, slink_mst)
   `AXI_ASSIGN_FROM_RESP(slink_mst, slink_axi_mst_rsp)
 
   `AXI_ASSIGN_FROM_REQ(slink_slv, slink_axi_slv_req)
   `AXI_ASSIGN_TO_RESP(slink_axi_slv_rsp, slink_slv)
 
-  `AXI_ASSIGN(axi_mux_slvs[0], axi_drv_mst)
-  `AXI_ASSIGN(axi_mux_slvs[1], axi_ext_mst)
-
-  // Multiplex internal and external AXI requests
-  axi_mux_intf #(
-    .SLV_AXI_ID_WIDTH ( DutCfg.AxiMstIdWidth   ),
-    .MST_AXI_ID_WIDTH ( DutCfg.AxiMstIdWidth+1 ),
-    .AXI_ADDR_WIDTH   ( DutCfg.AddrWidth       ),
-    .AXI_DATA_WIDTH   ( DutCfg.AxiDataWidth    ),
-    .AXI_USER_WIDTH   ( DutCfg.AxiUserWidth    ),
-    .NO_SLV_PORTS     ( 2 )
-  ) i_axi_mux_slink (
+  // Demultiplex axi_drv_mst between axi_to_ext_mst and slink_mst
+  axi_demux_intf #(
+    .AXI_ID_WIDTH   ( DutCfg.AxiMstIdWidth   ),
+    .AXI_ADDR_WIDTH ( DutCfg.AddrWidth       ),
+    .AXI_DATA_WIDTH ( DutCfg.AxiDataWidth    ),
+    .AXI_USER_WIDTH ( DutCfg.AxiUserWidth    ),
+    .NO_MST_PORTS   ( 1+NumAxiExtMstPorts    ),
+    .AXI_LOOK_BITS  ( DutCfg.AxiMstIdWidth   ),
+    .UNIQUE_IDS     ( 0                      )
+  ) i_axi_demux_slink (
     .clk_i  ( clk ),
     .rst_ni ( rst_n ),
     .test_i ( '0 ),
-    .slv ( axi_mux_slvs ),
-    .mst ( axi_mux_mst  )
+    .slv_aw_select_i ( axi_mst_select_i ),
+    .slv_ar_select_i ( axi_mst_select_i ),
+    .slv ( axi_drv_mst ),
+    .mst ( axi_demux_msts )
   );
 
-  // TODO: really needed?
-  axi_id_remap_intf #(
-    .AXI_SLV_PORT_ID_WIDTH (DutCfg.AxiMstIdWidth+1),
-    .AXI_SLV_PORT_MAX_UNIQ_IDS (DutCfg.SlinkMaxUniqIds),
-    .AXI_MAX_TXNS_PER_ID   (DutCfg.SlinkMaxTxnsPerId),
-    .AXI_MST_PORT_ID_WIDTH (DutCfg.AxiMstIdWidth),
-    .AXI_ADDR_WIDTH (DutCfg.AddrWidth),
-    .AXI_DATA_WIDTH (DutCfg.AxiDataWidth),
-    .AXI_USER_WIDTH (DutCfg.AxiUserWidth)
-  ) i_axi_id_remap (
-    .clk_i  ( clk ),
-    .rst_ni ( rst_n ),
-    .slv ( axi_mux_mst ),
-    .mst ( slink_mst )
-  );
+  // Assign demux output at index 0 to serial link
+  `AXI_ASSIGN(slink_mst, axi_demux_msts[0])
+
+  // Propagate external axi ports
+    for (genvar i=0; i < NumAxiExtMstPorts; i++) begin : gen_axi_to_ext_struct
+    // Assign demux output from index 1 to axi external
+    `AXI_ASSIGN(axi_ext_msts[i], axi_demux_msts[i+1])
+    // Convert interfaces to req/rsp structs
+    `AXI_ASSIGN_TO_REQ(axi_msts_req[i], axi_ext_msts[i])
+    `AXI_ASSIGN_FROM_RESP(axi_ext_msts[i], axi_msts_rsp[i])
+  end
 
   serial_link #(
     .axi_req_t    ( axi_mst_req_t ),
