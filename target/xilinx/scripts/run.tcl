@@ -94,6 +94,11 @@ if ($DEBUG) {
     write_debug_probes -force probes.ltx
 }
 
+# Incremental implementation
+if {[info exists $::env(ROUTED_DCP)] && [file exists  $::env(ROUTED_DCP)]} {
+  set_property incremental_checkpoint $ $::env(ROUTED_DCP) [get_runs impl_1]
+}
+
 # Implementation
 launch_runs impl_1
 wait_on_run impl_1
@@ -112,7 +117,7 @@ if {[info exists ::env(CHECK_TIMING)] && $::env(CHECK_TIMING)==1} {
 # Output Verilog netlist + SDC for timing simulation
 write_verilog -force -mode funcsim out/${project}_funcsim.v
 write_verilog -force -mode timesim out/${project}_timesim.v
-write_sdf     -force out/${project}_timesim.sdf
+# write_sdf     -force out/${project}_timesim.sdf
 
 # Reports
 exec mkdir -p reports/

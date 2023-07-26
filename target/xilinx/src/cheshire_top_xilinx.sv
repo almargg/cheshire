@@ -48,11 +48,11 @@ module cheshire_top_xilinx
 `endif
 
 `ifdef USE_SD
-  input logic         sd_cd_i,
-  output logic        sd_cmd_o,
-  inout wire  [3:0]   sd_d_io,
-  output logic        sd_reset_o,
-  output logic        sd_sclk_o,
+  input  logic          sd_cd_i, // Card Detect
+  output logic          sd_cmd_o,
+  inout  wire   [3:0]   sd_d_io,
+  output logic          sd_reset_o,
+  output logic          sd_sclk_o,
 `endif
 
 `ifdef USE_FAN
@@ -62,12 +62,7 @@ module cheshire_top_xilinx
 
 `ifdef USE_QSPI
 `ifndef USE_STARTUPE3
-  output logic        qspi_clk,
-  input  logic        qspi_dq0,
-  input  logic        qspi_dq1,
-  input  logic        qspi_dq2,
-  input  logic        qspi_dq3,
-  output logic        qspi_cs_b,
+  // TODO: off-chip qspi interface
 `endif // USE_STARTUPE3
 `endif // USE_QSPI
 
@@ -361,17 +356,15 @@ module cheshire_top_xilinx
   // SPI Adaption //
   //////////////////
 
-  logic spi_sck_soc;
-  logic [1:0] spi_cs_soc;
-  logic [3:0] spi_sd_soc_out;
-  logic [3:0] spi_sd_soc_in;
+  (* mark_debug = "true" *) logic spi_sck_soc;
+  (* mark_debug = "true" *) logic [1:0] spi_cs_soc;
+  (* mark_debug = "true" *) logic [3:0] spi_sd_soc_out;
+  (* mark_debug = "true" *) logic [3:0] spi_sd_soc_in;
 
-  logic spi_sck_en;
-  logic [1:0] spi_cs_en;
-  logic [3:0] spi_sd_en;
-  logic spi_sck_en_n;
-  logic [1:0] spi_cs_en_n;
-  logic [3:0] spi_sd_en_n;
+  (* mark_debug = "true" *) logic spi_sck_en;
+  (* mark_debug = "true" *) logic [1:0] spi_cs_en;
+  (* mark_debug = "true" *) logic [3:0] spi_sd_en;
+
 
   //////////////////
   // SD           //
@@ -401,24 +394,24 @@ module cheshire_top_xilinx
   //////////////////
 
 `ifdef USE_QSPI
-  logic                 qspi_clk;
-  logic                 qspi_clk_ts;
-  logic [3:0]           qspi_dqi;
-  logic [3:0]           qspi_dqo_ts;
-  logic [3:0]           qspi_dqo;
-  logic [SpihNumCs-1:0] qspi_cs_b;
-  logic [SpihNumCs-1:0] qspi_cs_b_ts;
+  (* mark_debug = "true" *) logic                 qspi_clk;
+  (* mark_debug = "true" *) logic                 qspi_clk_ts;
+  (* mark_debug = "true" *) logic [3:0]           qspi_dqi;
+  (* mark_debug = "true" *) logic [3:0]           qspi_dqo_ts;
+  (* mark_debug = "true" *) logic [3:0]           qspi_dqo;
+  (* mark_debug = "true" *) logic [SpihNumCs-1:0] qspi_cs_b;
+  (* mark_debug = "true" *) logic [SpihNumCs-1:0] qspi_cs_b_ts;
 
   assign qspi_clk      = spi_sck_soc;
   assign qspi_cs_b     = spi_cs_soc;
   assign qspi_dqo      = spi_sd_soc_out;
   assign spi_sd_soc_in = qspi_dqi;
   // Tristate - Enable
-  assign qspi_clk_ts  = ~(spi_sck_en);
-  assign qspi_cs_b_ts = ~(spi_cs_en);
-  assign qspi_dqo_ts  = ~(spi_sd_en);
+  assign qspi_clk_ts  = ~spi_sck_en;
+  assign qspi_cs_b_ts = ~spi_cs_en;
+  assign qspi_dqo_ts  = ~spi_sd_en;
 
-  // On VCU128, SPI ports are not directly available
+  // On VCU128/ZCU102, SPI ports are not directly available
 `ifdef USE_STARTUPE3
   STARTUPE3 #(
      .PROG_USR("FALSE"),
@@ -444,9 +437,7 @@ module cheshire_top_xilinx
      .USRDONETS (1'b1)
   );
 `else
-  assign qspi_clk_o = qspi_clk;
-  assign qspi_dqi = qspi_dq_i;
-  assign qspi_cs_b_o = qspi_cs_b;
+  // TODO: off-chip qspi interface
 `endif // USE_STARTUPE3
 
 `endif // USE_QSPI

@@ -97,9 +97,12 @@ set_false_path -hold -to [get_ports uart_tx_o]
 # CDCs #
 ########
 
-# cdc_fifo_gray: Disable hold checks, limit datapath delay and bus skew
-set_property KEEP_HIERARCHY SOFT [get_cells i_dram_wrapper/i_axi_cdc_mig/i_axi_cdc_*/i_cdc_fifo_gray_*/*i_sync]
-set_false_path -hold -through [get_pins -of_objects [get_cells i_dram_wrapper/i_axi_cdc_mig/i_axi_cdc_*]] -through [get_pins -of_objects [get_cells i_dram_wrapper/i_axi_cdc_mig/i_axi_cdc_*]]
-
+# Disable hold checks
+set_property KEEP_HIERARCHY SOFT [get_cells -hier -filter {ORIG_REF_NAME=="sync" || REF_NAME=="sync"}]
+# src false path
 set_false_path -hold -through [get_pins -of_objects [get_cells -hier -filter {ORIG_REF_NAME == axi_cdc_src || REF_NAME == axi_cdc_src}] -filter {NAME =~ *async*}]
+# dst false path
 set_false_path -hold -through [get_pins -of_objects [get_cells -hier -filter {ORIG_REF_NAME == axi_cdc_dst || REF_NAME == axi_cdc_dst}] -filter {NAME =~ *async*}]
+
+# Limit datapath delay
+# [see in board.xdc]

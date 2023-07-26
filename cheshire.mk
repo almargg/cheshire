@@ -11,6 +11,9 @@ BENDER ?= bender
 VLOG_ARGS ?= -suppress 2583 -suppress 13314
 VSIM      ?= vsim
 
+# Define board for FPGA flow and/or device tree selection
+BOARD         ?= vcu128
+
 # Define used paths (prefixed to avoid name conflicts)
 CHS_ROOT      ?= $(shell $(BENDER) path cheshire)
 CHS_REG_DIR   := $(shell $(BENDER) path register_interface)
@@ -55,7 +58,7 @@ chs-clean-deps:
 ######################
 
 CHS_NONFREE_REMOTE ?= git@iis-git.ee.ethz.ch:pulp-restricted/cheshire-nonfree.git
-CHS_NONFREE_COMMIT ?= b11f9e5fbc97209da75e77c93a1e4e0460dddf6c
+CHS_NONFREE_COMMIT ?= 0e70b230ea113c8d954329be5406b318cd62cc9a
 
 chs-nonfree-init:
 	git clone $(CHS_NONFREE_REMOTE) $(CHS_ROOT)/nonfree

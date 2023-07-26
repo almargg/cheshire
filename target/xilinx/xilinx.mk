@@ -10,7 +10,6 @@ CHS_XIL_DIR  ?= $(CHS_ROOT)/target/xilinx
 VIVADO       ?= vitis-2020.2 vivado
 
 PROJECT      ?= cheshire
-BOARD        ?= vcu128
 ip-dir       := $(CHS_XIL_DIR)/xilinx
 
 # Select board specific variables
@@ -32,6 +31,9 @@ ifeq ($(BOARD),zcu102)
 	XILINX_PART    ?= xczu9eg-ffvb1156-2-e
 	XILINX_BOARD   ?= xilinx.com:zcu102:part0:3.4
 	ips-names      := xlnx_mig_ddr4 xlnx_clk_wiz xlnx_vio
+	ifeq ($(INT_JTAG),1)
+		xilinx_targs += -t bscane
+	endif
 endif
 
 # Location of ip outputs
@@ -55,7 +57,9 @@ VIVADOENV ?=  PROJECT=$(PROJECT)            \
               HOST=$(XILINX_HOST)           \
               FPGA_PATH=$(FPGA_PATH)        \
               BIT=$(bit)                    \
-              IP_PATHS="$(foreach ip-name,$(ips-names),xilinx/$(ip-name)/$(ip-name).srcs/sources_1/ip/$(ip-name)/$(ip-name).xci)"
+              IP_PATHS="$(foreach ip-name,$(ips-names),xilinx/$(ip-name)/$(ip-name).srcs/sources_1/ip/$(ip-name)/$(ip-name).xci)" \
+              ROUTED_DCP=$(ROUTED_DCP)      \
+              CHECK_TIMING=$(CHECK_TIMING)
 
 MODE        ?= gui
 VIVADOFLAGS ?= -nojournal -mode $(MODE)
@@ -72,6 +76,7 @@ $(bit): $(ips) $(CHS_XIL_DIR)/scripts/add_sources.tcl
 	cd $(CHS_XIL_DIR) && $(VIVADOENV) $(VIVADO) $(VIVADOFLAGS) -source scripts/prologue.tcl -source scripts/run.tcl
 	cp $(CHS_XIL_DIR)/$(PROJECT).runs/impl_1/*.bit $(out)
 	cp $(CHS_XIL_DIR)/$(PROJECT).runs/impl_1/*.ltx $(out)
+	cp $(CHS_XIL_DIR)/$(PROJECT).runs/impl_1/*.dcp $(out)
 
 # Generate ips
 %.xci:

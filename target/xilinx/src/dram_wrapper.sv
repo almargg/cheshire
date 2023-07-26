@@ -32,8 +32,8 @@ module dram_wrapper #(
     `DDR3_INTF
 `endif
     // Dram axi interface
-    (* mark_debug = "true" *) input  axi_soc_req_t  soc_req_i,
-    (* mark_debug = "true" *) output axi_soc_resp_t soc_rsp_o
+    input  axi_soc_req_t  soc_req_i,
+    output axi_soc_resp_t soc_rsp_o
 );
 
   ////////////////////////////////////

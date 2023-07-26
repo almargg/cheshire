@@ -6,7 +6,9 @@
 # Sys clock #
 #############
 
-create_clock -period 3.333 -name sys_clk [get_pins u_ibufg_sys_clk/O]
+# 300 MHz ref clock
+set SYS_TCK 3.332
+create_clock -period $SYS_TCK -name sys_clk [get_pins u_ibufg_sys_clk/O]
 set_property CLOCK_DEDICATED_ROUTE BACKBONE [get_pins u_ibufg_sys_clk/O]
 set_clock_groups -name sys_clk_async -asynchronous -group {sys_clk}
 
@@ -14,10 +16,21 @@ set_clock_groups -name sys_clk_async -asynchronous -group {sys_clk}
 # Mig clock #
 #############
 
+# Dram axi clock : 833ps * 4
+set MIG_TCK 3.332
 set MIG_RST [get_pins i_dram_wrapper/i_dram/c0_ddr4_ui_clk_sync_rst]
-create_clock -period 3.333 -name dram_axi_clk [get_pins i_dram_wrapper/i_dram/c0_ddr4_ui_clk]
+create_clock -period $MIG_TCK -name dram_axi_clk [get_pins i_dram_wrapper/i_dram/c0_ddr4_ui_clk]
+set_clock_groups -name dram_async -asynchronous -group {dram_axi_clk}
 set_false_path -hold -through $MIG_RST
-set_max_delay -through $MIG_RST 3.333
+set_max_delay -through $MIG_RST $MIG_TCK
+
+########
+# CDCs #
+########
+
+set_max_delay -through [get_nets -of_objects [get_cells i_dram_wrapper/gen_cdc.i_axi_cdc_mig/i_axi_cdc_*/i_cdc_fifo_gray_*/*] -filter {NAME=~*async*}] $MIG_TCK
+set_max_delay -datapath -from [get_pins i_axi_cdc_mig/i_axi_cdc_*/i_cdc_fifo_gray_*/*reg*/C] -to [get_pins i_axi_cdc_mig/i_axi_cdc_*/i_cdc_fifo_gray_dst_*/*i_sync/reg*/D] $FPGA_TCK
+
 
 
 #################################################################################
