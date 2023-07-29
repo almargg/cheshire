@@ -21,13 +21,14 @@ MORTY			?= morty	# https://github.com/pulp-platform/morty
 
 include $(CHS_ROOT)/target/verilator/tools.mk
 
-VERILATOR_FLAGS += --cc --no-timing
+VERILATOR_FLAGS += --trace --cc 
 VERILATOR_FLAGS += --error-limit 4419 --unroll-count 256 -Wno-fatal
-VERILATOR_FLAGS += -Wno-WIDTHEXPAND -Wno-WIDTHTRUNC -Wno-WIDTHCONCAT -Wno-PINMISSING -Wno-MODDUP -Wno-UNOPTFLAT -Wno-BLKANDNBLK -Wno-UNUSED -Wno-ASCRANGE
+VERILATOR_FLAGS += -Wno-WIDTHEXPAND -Wno-WIDTHTRUNC -Wno-WIDTHCONCAT -Wno-PINMISSING -Wno-MODDUP -Wno-UNOPTFLAT -Wno-BLKANDNBLK -Wno-UNUSED 
 VERILATOR_EXE += --exe cheshire.cpp
 
 VERILATOR_CFILES += $(VERILATOR_SRC_PATH)/cheshire.cpp
 VERILATOR_FESVR = -LDFLAGS "-L$(RISCV)/lib -Wl,-rpath,$(RISCV)/lib -lfesvr"
+VERILATOR_CFLAGS = -CFLAGS "-D_GLIBCXX_USE_CXX11_ABI=0"
 
 VERILATOR_OUTPUT = --Mdir $(CHS_ROOT)/target/verilator/obj_dir
 
@@ -55,7 +56,7 @@ chs-verilate-pickle: $(CHS_ROOT)/target/verilator/build/sources.json
 	# applying patches
 	cat $(CHS_ROOT)/target/verilator/patches/reg_bus_interface_ugly_copy.sv >> $(PICKLE_FILE)  	# Todo: fix REGBUS copy in morty
 	sed -i "s/\s*req_q <= (store_req_t'.*/      req_q <= (store_req_t'{mode: axi_llc_pkg::tag_mode_e'(2'b0), default: '0});/g" $(PICKLE_FILE)
-	patch -u $(PICKLE_FILE) -i $(CHS_ROOT)/target/verilator/patches/permutations.patch
+#	patch -u $(PICKLE_FILE) -i $(CHS_ROOT)/target/verilator/patches/permutations.patch
 
 chs-verilate-command := \
 	$(VERILATOR) \
@@ -66,6 +67,7 @@ chs-verilate-command := \
 	$(VERILATOR_TOPMODULE) \
 	$(VERILATOR_EXE) \
 	$(VERILATOR_CFILES) \
+	$(VERILATOR_CFLAGS) \
 	$(VERILATOR_OUTPUT)
 
 chs-verilate: chs-verilate-pickle
@@ -74,4 +76,4 @@ chs-verilate: chs-verilate-pickle
 	cd $(CHS_ROOT)/target/verilator/obj_dir && $(MAKE) -f Vcheshire_testharness.mk Vcheshire_testharness
 
 chs-verilate-run: chs-verilate
-	$(CHS_ROOT)/target/verilator/obj_dir/Vcheshire_testharness
+	$(CHS_ROOT)/target/verilator/obj_dir/Vcheshire_testharness sw/tests/helloworld.spm.elf
